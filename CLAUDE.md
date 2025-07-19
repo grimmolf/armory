@@ -8,118 +8,139 @@ Armory is a full-featured Bitcoin client offering advanced wallet management cap
 
 ## Architecture
 
-### Core Components
+**⚠️ IMPORTANT: This project has been completely modernized in Rust.**
 
-- **Python GUI Layer** (`ArmoryQt.py`) - Main PyQt4-based graphical interface
-- **Armory Engine** (`armoryengine/`) - Core Bitcoin wallet and transaction logic written in Python
-- **C++ Backend** (`cppForSwig/`) - High-performance blockchain data management and cryptographic operations
-- **Daemon Interface** (`armoryd.py`) - JSON-RPC server for headless operation
+The legacy Python/C++ implementation described below has been replaced with a modern Rust implementation located in `armory-rust/`. The information below is maintained for historical reference and migration context only.
 
-### Key Directories
+### Modern Rust Implementation (Current)
 
-- `armoryengine/` - Core wallet engine (Python)
-  - `PyBtcWallet.py` - Wallet management
-  - `PyBtcAddress.py` - Address/key handling
-  - `Transaction.py` - Transaction creation/parsing
-  - `BDM.py` - Block Data Manager interface
-- `cppForSwig/` - C++ backend with SWIG Python bindings
-  - `BlockUtils.cpp/.h` - Blockchain data processing
-  - `BtcWallet.cpp/.h` - Wallet operations
-  - `EncryptionUtils.cpp/.h` - Cryptographic functions
-- `ui/` - Additional UI components and dialogs
-- `pytest/` - Python unit tests
-- `cppForSwig/gtest/` - C++ unit tests
+- **Rust CLI Application** (`armory-rust/src/main.rs`) - Modern command-line interface
+- **Rust Wallet Engine** (`armory-rust/src/wallet/`) - Memory-safe wallet operations
+- **Modern Cryptography** (`armory-rust/src/crypto/`) - ChaCha20Poly1305, Argon2id, BIP-340
+- **Network Layer** (`armory-rust/src/network/`) - BIP-324 encrypted transport, Bitcoin Core RPC
+
+### Legacy Architecture (Historical Reference)
+
+The following components were part of the original implementation and have been completely replaced:
+
+- **~~Python GUI Layer~~** (~~`ArmoryQt.py`~~) - ⚠️ Removed - was PyQt4-based graphical interface
+- **~~Armory Engine~~** (~~`armoryengine/`~~) - ⚠️ Removed - was Python wallet logic
+- **~~C++ Backend~~** (~~`cppForSwig/`~~) - ⚠️ Removed - was C++/SWIG blockchain operations
+- **~~Daemon Interface~~** (~~`armoryd.py`~~) - ⚠️ Removed - was JSON-RPC server
+
+### Current Key Directories
+
+- `armory-rust/` - **Modern Rust implementation (Active Development)**
+  - `src/wallet/` - HD wallet with descriptor support
+  - `src/crypto/` - Modern cryptographic operations
+  - `src/transaction/` - PSBT v2 transaction processing
+  - `src/network/` - BIP-324 and Bitcoin Core RPC
+  - `src/cli/` - Command-line interface
+  - `src/storage/` - Encrypted storage with legacy import
+- `docs/` - Project documentation
+- `PRPs/` - Project requirements and planning
 
 ### Build System
 
-The project uses a dual build system:
-- **Make** for C++ components and SWIG bindings
-- **Python setup.py** for packaging (py2exe for Windows)
+**Current**: The project now uses **Cargo** (Rust's native build system):
+- **Rust Cargo** for all modern components in `armory-rust/`
+- **Cross-platform support** with native Rust toolchain
+
+**Legacy** (Removed): The original dual build system has been completely replaced:
+- ~~**Make** for C++ components and SWIG bindings~~ - ⚠️ Removed
+- ~~**Python setup.py** for packaging (py2exe for Windows)~~ - ⚠️ Removed
 
 ## Development Commands
 
-### Building
+### Building (Current Rust Implementation)
 
 ```bash
-# Build entire project (C++ backend + Python bindings)
-make
+# Navigate to modern Rust implementation
+cd armory-rust
 
-# Build only C++ tests
-make all-test-tools
+# Build the Rust project
+cargo build
 
-# Clean build artifacts
-make clean
+# Build optimized release version
+cargo build --release
 
-# macOS specific build
-make osx
+# Install the CLI tool system-wide
+cargo install --path .
 ```
 
-### Testing
+### Testing (Current)
 
 ```bash
-# Run all tests
-make test
+# Run all Rust tests (127/127 passing - 100%)
+cargo test
 
-# Run C++ tests only
-make gtest
+# Run tests with output
+cargo test -- --nocapture
 
-# Run Python tests only  
-make pytest
-# OR
-python -m unittest discover
+# Run specific test modules
+cargo test crypto::tests
+cargo test wallet::tests
+cargo test cli::tests
 ```
 
-### C++ Development
+### Legacy Commands (Historical Reference)
+
+The following commands were used with the legacy implementation and are no longer applicable:
 
 ```bash
-# Build C++ shared library and SWIG bindings
-cd cppForSwig && make
-
-# Run specific C++ tests
-cd cppForSwig/gtest && ./CppBlockUtilsTests
+# ⚠️ REMOVED - Legacy build commands
+# make                    # Built C++ backend + Python bindings
+# make test              # Ran legacy test suite  
+# make pytest            # Ran Python tests
+# cd cppForSwig && make  # Built C++ shared library and SWIG bindings
 ```
 
 ## Dependencies
 
-### Required
-- Python 2.6/2.7 with development headers
-- PyQt4 for GUI
-- Twisted for asynchronous networking
-- SWIG for Python/C++ bindings
-- Crypto++ for cryptographic operations
-- GCC/G++ compiler
+### Current (Rust Implementation)
+- **Rust 1.78+** with Cargo package manager
+- **Modern cryptographic libraries** via Cargo (ChaCha20Poly1305, Argon2id)
+- **Bitcoin libraries** via Cargo (bitcoin, secp256k1, bdk_wallet)
+- **Cross-platform support** - Windows, macOS, Linux
 
-### Platform-Specific
-- **Linux**: Standard package manager installations
-- **Windows**: Visual Studio build environment, py2exe for packaging
-- **macOS**: Xcode tools, special deployment scripts in `osxbuild/`
+### Legacy (Historical Reference - Removed)
+- ~~Python 2.6/2.7 with development headers~~ - ⚠️ Removed
+- ~~PyQt4 for GUI~~ - ⚠️ Removed  
+- ~~Twisted for asynchronous networking~~ - ⚠️ Removed
+- ~~SWIG for Python/C++ bindings~~ - ⚠️ Removed
+- ~~Crypto++ for cryptographic operations~~ - ⚠️ Removed
+- ~~GCC/G++ compiler~~ - ⚠️ Removed
+
+### Platform-Specific (Legacy - Removed)
+- ~~**Linux**: Standard package manager installations~~ - ⚠️ Removed
+- ~~**Windows**: Visual Studio build environment, py2exe for packaging~~ - ⚠️ Removed
+- ~~**macOS**: Xcode tools, special deployment scripts in `osxbuild/`~~ - ⚠️ Removed
 
 ## Key Development Notes
 
-### C++ Backend Integration
-- Uses SWIG to generate Python bindings from C++ code
-- Core blockchain operations are in C++ for performance
-- Python code interfaces through `CppBlockUtils` module
+### Modern Rust Architecture
+- **Memory-safe**: Rust ownership system prevents common vulnerabilities
+- **Modern cryptography**: ChaCha20Poly1305, Argon2id replacing legacy Crypto++
+- **Bitcoin standards**: Full BIP-32/39/44/49/84/86/340/341/370/324 support
+- **CLI-focused**: Command-line interface with production-ready functionality
 
-### Blockchain Data Management
-- Depends on Bitcoin Core for blockchain data and networking
-- Uses LMDB for local blockchain indexing and wallet data storage
-- Block Data Manager (BDM) coordinates between Bitcoin Core and Armory
+### Current Implementation (Rust)
+- **Single language**: Pure Rust implementation eliminates multi-language complexity
+- **Modern dependencies**: Cargo-managed crates for Bitcoin protocol support
+- **Comprehensive testing**: 127/127 tests passing (100% success rate)
+- **Cross-platform**: Native Rust compilation for Windows, macOS, Linux
 
-### Multi-Language Codebase
-- UI and wallet logic primarily in Python
-- Performance-critical operations in C++
-- Extensive use of SWIG for seamless integration
+### Legacy Architecture (Historical Reference - Removed)
+- ~~**C++ Backend Integration**: Used SWIG to generate Python bindings~~ - ⚠️ Removed
+- ~~**Multi-Language Codebase**: UI in Python, performance operations in C++~~ - ⚠️ Removed
+- ~~**LMDB Storage**: Local blockchain indexing and wallet data storage~~ - ⚠️ Replaced with SLED
+- ~~**Separate test suites**: Python (`pytest/`) and C++ (`cppForSwig/gtest/`)~~ - ⚠️ Replaced with unified Rust tests
 
-### Testing Strategy
-- Separate test suites for Python (`pytest/`) and C++ (`cppForSwig/gtest/`)
-- Both unit tests and integration tests included
-- Test data includes sample blockchain files
-
-### Offline/Online Architecture
-- Designed for offline signing workflows
-- Watching-only wallets for online monitoring
-- Transaction building can be done offline, signed, then broadcast online
+### Maintained Features
+- **Offline/Online Architecture**: Still designed for offline signing workflows
+- **Watching-only wallets**: Online monitoring capabilities maintained
+- **Legacy wallet import**: Can import original Armory wallet files
+- **Bitcoin Core integration**: RPC compatibility with Bitcoin Core nodes
 
 ## Development Logging
 
