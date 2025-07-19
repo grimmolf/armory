@@ -120,3 +120,27 @@ cd cppForSwig/gtest && ./CppBlockUtilsTests
 - Designed for offline signing workflows
 - Watching-only wallets for online monitoring
 - Transaction building can be done offline, signed, then broadcast online
+
+## Development Logging
+
+**CRITICAL:** All Claude Code development sessions MUST use the project development logging system.
+
+### Development Log Location
+- **Primary Log**: `docs/CLAUDE_DEVELOPMENT_LOG.md`
+- **Format**: Structured entries with timestamp, branch, context, files modified, and implementation notes
+- **Purpose**: Track architectural decisions, feature development, and maintain session continuity
+
+### Logging Requirements
+1. **Session Start**: Add entry with timestamp, branch, and planned work
+2. **During Development**: Update entry with files modified and key changes
+3. **Session End**: Finalize with implementation notes and cross-references
+4. **Branch Tracking**: Create separate entries for each branch worked on
+
+### Usage Guidelines
+- **Always update the log** when starting development work
+- **Include branch context** for multi-branch feature development  
+- **Reference related entries** when building on previous work
+- **Use consistent formatting** for searchability
+- **Document rationale** for architectural and implementation decisions
+
+This ensures continuity between Claude Code sessions and maintains a complete record of project evolution.
