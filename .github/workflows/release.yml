@@ -1,0 +1,175 @@
+name: Cross-Platform Release Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          # macOS (Intel and Apple Silicon)
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            binary_name: armory-rust-macos-intel
+            compress: tar.gz
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            binary_name: armory-rust-macos-apple-silicon
+            compress: tar.gz
+          
+          # Ubuntu (x86_64 and ARM64)
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary_name: armory-rust-ubuntu-x86_64
+            compress: tar.gz
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            binary_name: armory-rust-ubuntu-aarch64
+            compress: tar.gz
+          
+          # Fedora/CentOS/RHEL compatible
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            binary_name: armory-rust-fedora-x86_64
+            compress: tar.gz
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: ${{ matrix.target }}
+
+    - name: Install cross-compilation tools (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-aarch64-linux-gnu musl-tools
+        
+    - name: Cache cargo registry and git deps
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: ${{ runner.os }}-cargo-${{ hashFiles('armory-rust/Cargo.lock') }}
+
+    - name: Cache target directory
+      uses: actions/cache@v3
+      with:
+        path: armory-rust/target
+        key: ${{ runner.os }}-${{ matrix.target }}-target-${{ hashFiles('armory-rust/Cargo.lock') }}
+
+    - name: Build binary
+      working-directory: armory-rust
+      run: |
+        # Set linker for cross-compilation
+        if [[ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ]]; then
+          export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
+        fi
+        
+        cargo build --release --target ${{ matrix.target }}
+
+    - name: Create release directory
+      run: |
+        mkdir -p release/${{ matrix.binary_name }}
+        cp armory-rust/target/${{ matrix.target }}/release/armory-rust release/${{ matrix.binary_name }}/
+        
+        # Copy documentation and license
+        cp README.md release/${{ matrix.binary_name }}/
+        cp LICENSE release/${{ matrix.binary_name }}/
+        cp armory-rust/README.md release/${{ matrix.binary_name }}/RUST_README.md
+        
+        # Create installation script
+        cat > release/${{ matrix.binary_name }}/install.sh << 'EOF'
+        #!/bin/bash
+        # Armory Rust Installation Script
+        
+        echo "Installing Armory Rust Bitcoin Wallet..."
+        
+        # Default installation directory
+        INSTALL_DIR="${HOME}/.local/bin"
+        
+        # Create directory if it doesn't exist
+        mkdir -p "${INSTALL_DIR}"
+        
+        # Copy binary
+        cp armory-rust "${INSTALL_DIR}/"
+        chmod +x "${INSTALL_DIR}/armory-rust"
+        
+        echo "✅ Armory Rust installed to ${INSTALL_DIR}/armory-rust"
+        echo ""
+        echo "Add ${INSTALL_DIR} to your PATH if not already done:"
+        echo "export PATH=\"\$PATH:${INSTALL_DIR}\""
+        echo ""
+        echo "Run with: armory-rust --help"
+        EOF
+        
+        chmod +x release/${{ matrix.binary_name }}/install.sh
+
+    - name: Create compressed archive
+      run: |
+        cd release
+        if [[ "${{ matrix.compress }}" == "tar.gz" ]]; then
+          tar -czf ${{ matrix.binary_name }}.tar.gz ${{ matrix.binary_name }}/
+        fi
+
+    - name: Upload release artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.binary_name }}
+        path: release/${{ matrix.binary_name }}.tar.gz
+
+  create-release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+        files: |
+          */*.tar.gz
+        body: |
+          ## Armory Rust Bitcoin Wallet
+          
+          Cross-platform pre-built binaries for modern Rust implementation.
+          
+          ### Supported Platforms:
+          - **macOS**: Intel (x86_64) and Apple Silicon (aarch64)
+          - **Ubuntu/Debian**: x86_64 and aarch64
+          - **Fedora/RHEL/CentOS**: x86_64 (musl static binary)
+          
+          ### Installation:
+          1. Download the appropriate binary for your platform
+          2. Extract: `tar -xzf armory-rust-[platform].tar.gz`
+          3. Run installation script: `cd armory-rust-[platform] && ./install.sh`
+          4. Or manually copy `armory-rust` to your PATH
+          
+          ### Usage:
+          ```bash
+          armory-rust --help
+          armory-rust wallet create --name my-wallet
+          armory-rust wallet list
+          ```
+          
+          For development documentation, see the included README files.
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,94 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ master, main, develop ]
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+    
+    - name: Cache cargo
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          armory-rust/target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('armory-rust/Cargo.lock') }}
+    
+    - name: Format check
+      working-directory: armory-rust
+      run: cargo fmt --all -- --check
+    
+    - name: Clippy
+      working-directory: armory-rust
+      run: cargo clippy -- -D warnings
+    
+    - name: Run tests
+      working-directory: armory-rust
+      run: cargo test
+    
+    - name: Build
+      working-directory: armory-rust
+      run: cargo build --release
+
+  build-check:
+    name: Build Check - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Cache cargo
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          armory-rust/target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('armory-rust/Cargo.lock') }}
+    
+    - name: Build
+      working-directory: armory-rust
+      run: cargo build --release
+    
+    - name: Test basic CLI
+      working-directory: armory-rust
+      run: |
+        ./target/release/armory-rust --help
+        ./target/release/armory-rust --version
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Install cargo-audit
+      run: cargo install cargo-audit
+    
+    - name: Security audit
+      working-directory: armory-rust
+      run: cargo audit
