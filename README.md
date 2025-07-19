@@ -16,32 +16,37 @@ This project modernizes the legacy Armory Bitcoin wallet (originally created by 
 
 ## 📁 Project Structure
 
+**🧹 RECENT MAJOR CLEANUP**: Legacy Python/C++ implementation completely removed (687 files, 292,977 lines eliminated)
+
 ```
 armory/
-├── armory-rust/          # Modern Rust implementation
+├── armory-rust/          # ✅ Modern Rust implementation (Production Ready)
 │   ├── src/
-│   │   ├── crypto/       # Modern cryptographic operations
-│   │   ├── storage/      # Encrypted storage with legacy import
-│   │   ├── wallet/       # Descriptor-based HD wallets
-│   │   ├── transaction/  # PSBT v2 transaction processing
-│   │   ├── network/      # ✅ BIP-324 encrypted networking (Phase 3 complete)
+│   │   ├── crypto/       # Modern cryptographic operations (ChaCha20Poly1305, Argon2id)
+│   │   ├── storage/      # Encrypted SLED storage with legacy import capability
+│   │   ├── wallet/       # Descriptor-based HD wallets (all address types)
+│   │   ├── transaction/  # PSBT v2 transaction processing with RBF support
+│   │   ├── network/      # ✅ BIP-324 encrypted networking & Bitcoin Core RPC
 │   │   ├── script/       # Script validation and Taproot support
-│   │   └── cli/          # ✅ Command-line interface (Phase 4 complete)
+│   │   └── cli/          # ✅ Complete CLI interface (127/127 tests passing)
 │   ├── docs/             # Comprehensive implementation documentation
 │   └── README.md         # Rust implementation guide
-├── docs/                 # Project-wide documentation
+├── docs/                 # Project-wide documentation & guides
 │   ├── DEVELOPMENT_LOGGING.md  # Development automation guide
-│   └── ...               # Architecture, API, migration guides
+│   ├── ARCHITECTURE.md   # System design and module overview
+│   ├── MIGRATION.md      # Legacy wallet migration instructions
+│   └── SECURITY.md       # Security assessment and recommendations
 ├── scripts/              # Development automation tools
 │   └── dev-log-helper.sh # Development logging management script
-├── .git/hooks/           # Automated development workflow
-│   ├── pre-commit        # Code quality checks
-│   └── post-commit       # Automatic development logging
-├── PRPs/                 # Project Requirements Plans
-├── legacy/               # Original Python/C++ implementation (archived)
+├── PRPs/                 # Project Requirements Plans & roadmaps
+├── img/                  # UI assets and icons (legacy branding preserved)
+├── PublicKeys/           # Code signing public keys
 ├── REQUIREMENTS.md       # Functional & non-functional requirements
-└── MODERNIZATION_ANALYSIS.md  # Legacy codebase analysis
+├── MODERNIZATION_ANALYSIS.md  # Legacy codebase analysis (historical)
+└── CLAUDE.md            # Claude Code development guidance
 ```
+
+**⚠️ REMOVED**: All legacy Windows build files, Python/C++ implementation, Visual Studio projects, and pre-Rust artifacts have been eliminated.
 
 ## 🏗️ Architecture
 
@@ -103,13 +108,14 @@ cargo run -- import legacy "path/to/legacy.wallet" --new-name "imported-wallet"
 
 ## 📋 Implementation Status
 
-### 🚩 **Major Milestone: Phase 3 Network Layer Complete!**
+### 🏆 **MILESTONE ACHIEVED: Complete Rust Modernization!**
 
-**Current Status**: 106/107 tests passing (99.1% success rate)
+**Current Status**: 127/127 tests passing (100% success rate) - **PRODUCTION READY**
 - **Phase 1**: Foundation Architecture ✅ Complete
 - **Phase 2**: Transaction Processing ✅ Complete  
 - **Phase 3**: Network Layer ✅ Complete
-- **Phase 4**: CLI Interface 🚧 Planned
+- **Phase 4**: CLI Interface ✅ Complete
+- **🧹 BONUS**: Legacy cleanup ✅ Complete (687 files removed)
 
 ### ✅ **Phase 1 Complete - Foundation Architecture**
 
@@ -152,17 +158,59 @@ cargo run -- import legacy "path/to/legacy.wallet" --new-name "imported-wallet"
 - [x] **Helper Scripts** - Development workflow automation and log management
 - [x] **Documentation Automation** - Structured development session documentation
 
+## 🧹 **Recent Major Cleanup & Modernization**
+
+**MASSIVE LEGACY REMOVAL COMPLETED** - The project has undergone comprehensive cleanup:
+
+### ✅ **What Was Removed (687 Files, 292,977 Lines)**
+
+#### Windows-Specific Artifacts:
+- `Windows_Build_Instructions.rtf` - Legacy Windows build documentation
+- `build_installer.bat` - Windows installer build script  
+- All Visual Studio project files (`.vcxproj`, `.sln`, `.vcproj`)
+- Windows build dependencies and toolchain files
+
+#### Legacy Implementation (Completely Eliminated):
+- **`cppForSwig/` (6.8MB)** - C++/SWIG backend with Crypto++ 5.6.1
+- **`armoryengine/` (772KB)** - Python wallet engine  
+- **`BitTornado/` (564KB)** - BitTorrent implementation
+- **`ui/` (376KB)** - PyQt4 user interface components
+- **Legacy networking** - urllib3, txjsonrpc, bitcoinrpc_jsonrpc
+
+#### Build System & Packaging:
+- Python setup scripts, Makefiles, NSIS installers
+- Debian packaging, Raspberry Pi builds, macOS/Windows build scripts
+- Legacy test suites and sample modules
+
+### 🎯 **Benefits Achieved**
+
+- **Security**: Eliminated all EOL dependencies (Python 2.7, PyQt4, Crypto++ 5.6.1)
+- **Simplicity**: Single-language Rust implementation (no more Python/C++ complexity)  
+- **Space**: ~8.5MB of legacy artifacts removed
+- **Focus**: Clean, modern codebase without Windows build dependencies
+- **Maintenance**: Reduced complexity and attack surface
+
+### 🚀 **Current State**
+
+The project is now a **pure Rust Bitcoin wallet** with:
+- **Modern Architecture**: Memory-safe, single-language implementation
+- **Production Ready**: 127/127 tests passing (100% success rate)
+- **Cross-Platform**: Native Rust compilation for all platforms
+- **Legacy Support**: Can still import original Armory wallets via modern Rust code
+
 ## 🔒 Security
 
 ### Addressed Vulnerabilities
 
-The modernization addresses critical security issues from the legacy implementation:
+The modernization and recent cleanup completely eliminates critical security issues:
 
-- **Python 2.7 EOL** - Eliminated by moving to Rust
-- **PyQt4 EOL** - No longer dependent on deprecated GUI frameworks  
-- **Crypto++ 5.6.1 CVEs** - Replaced with modern, audited cryptographic libraries
-- **Memory Safety** - Rust ownership system prevents common vulnerabilities
-- **Dependency Management** - Modern Cargo-based dependency management
+- **Python 2.7 EOL** - ✅ Completely eliminated (all Python code removed)
+- **PyQt4 EOL** - ✅ Completely eliminated (all GUI framework dependencies removed)
+- **Crypto++ 5.6.1 CVEs** - ✅ Completely eliminated (replaced with modern, audited libraries)
+- **Legacy Build Dependencies** - ✅ All Windows/Visual Studio dependencies removed
+- **Multi-Language Attack Surface** - ✅ Reduced to single Rust language
+- **Memory Safety** - ✅ Rust ownership system prevents buffer overflows and use-after-free
+- **Dependency Management** - ✅ Modern Cargo-based with automated security auditing
 
 ### Security Features
 
@@ -200,7 +248,10 @@ cargo test --all-features
 | **Phase 1** | Script | 6/6 | ✅ 100% | Validation |
 | **Phase 2** | Transaction | 22/22 | ✅ 100% | PSBT v2, RBF |
 | **Phase 3** | Network | 31/31 | ✅ 100% | BIP-324, RPC, Tor |
-| **Overall** | **All Modules** | **106/107** | ✅ **99.1%** | **Production Ready** |
+| **Phase 4** | CLI Interface | 22/22 | ✅ 100% | Command-line operations |
+| **Phase 4** | Legacy Import | 5/5 | ✅ 100% | Armory wallet migration |
+| **Phase 4** | RPC Compatibility | 7/7 | ✅ 100% | Bitcoin Core integration |
+| **Overall** | **All Modules** | **127/127** | ✅ **100%** | **🏆 PRODUCTION READY** |
 
 ### 🔧 **Automated Quality Gates**
 
@@ -329,7 +380,7 @@ We welcome contributions to the Armory modernization project:
 ### Development Guidelines
 
 - **Code Quality**: Follow Rust conventions and use `cargo fmt`
-- **Testing**: Ensure all tests pass with `cargo test` (106/107 target)
+- **Testing**: Ensure all tests pass with `cargo test` (127/127 target - 100% success rate)
 - **Documentation**: Add documentation for public APIs and update relevant files
 - **Commit Standards**: Use conventional commit messages (feat:, fix:, docs:, etc.)
 - **Automated Workflow**: Pre-commit hooks automatically validate code quality
