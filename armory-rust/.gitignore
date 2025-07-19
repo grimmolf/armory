@@ -1,0 +1,36 @@
+# Rust build artifacts
+/target/
+Cargo.lock
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Local configuration
+.env
+config.toml
+
+# Backup files
+*.bak
+*~
+
+# Coverage reports
+tarpaulin-report.html
+coverage/
+
+# Flamegraph output
+flamegraph.svg
+perf.data*
+
+# Temporary files
+/tmp/
+*.tmp

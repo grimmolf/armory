@@ -9,6 +9,7 @@ pub mod crypto;
 pub mod storage;
 pub mod wallet;
 pub mod transaction;
+pub mod script;
 pub mod network;
 pub mod cli;
 

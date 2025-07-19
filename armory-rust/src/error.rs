@@ -138,6 +138,21 @@ pub enum TransactionError {
     
     #[error("Bitcoin core error: {0}")]
     Bitcoin(#[from] bitcoin::consensus::encode::Error),
+    
+    #[error("Invalid input: {0}")]
+    InvalidInput(String),
+    
+    #[error("Invalid amount: {0}")]
+    InvalidAmount(String),
+    
+    #[error("Invalid locktime: {0}")]
+    InvalidLocktime(String),
+    
+    #[error("Signing failed: {0}")]
+    SigningFailed(String),
+    
+    #[error("Hardware wallet error: {0}")]
+    HardwareWallet(String),
 }
 
 /// Result type for all wallet operations
