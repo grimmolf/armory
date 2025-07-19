@@ -208,29 +208,59 @@ cargo test
 RUST_LOG=debug cargo run -- --help
 ```
 
-### Running the CLI
+### Using the Wallet
 
+#### Option 1: System Installation (Recommended)
+
+Install the binary to your system PATH:
+```bash
+cargo install --path .
+```
+
+Then use `armory-rust` from anywhere:
 ```bash
 # Show available commands
-cargo run -- --help
+armory-rust --help
 
 # Create a new wallet
-cargo run -- create my-wallet --network regtest --encrypt
+armory-rust create my-wallet --network regtest --encrypt
 
 # List wallets
-cargo run -- list
+armory-rust list
 
 # Generate a new address
-cargo run -- address my-wallet --type native-segwit
+armory-rust address my-wallet --type native-segwit
 
 # Check wallet balance
-cargo run -- balance my-wallet
+armory-rust balance my-wallet
 
 # Import legacy Armory wallet
-cargo run -- legacy-import /path/to/legacy.wallet my-imported-wallet
+armory-rust legacy-import /path/to/legacy.wallet my-imported-wallet
 
 # Create multi-signature wallet
-cargo run -- multisig create 2-of-3 wallet1 wallet2 wallet3
+armory-rust multisig create 2-of-3 wallet1 wallet2 wallet3
+```
+
+#### Option 2: Local Binary
+
+Build and use the release binary directly:
+```bash
+# Build optimized release binary
+cargo build --release
+
+# Use the local binary
+./target/release/armory-rust --help
+./target/release/armory-rust create my-wallet --network regtest
+```
+
+#### Development Usage
+
+For development and testing, you can use `cargo run`:
+```bash
+# Development commands (slower, includes debug info)
+cargo run -- --help
+cargo run -- create test-wallet --network regtest
+cargo run -- list
 ```
 
 ---
