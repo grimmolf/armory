@@ -23,6 +23,251 @@ Each entry follows this structure:
 ## Development Entries
 
 
+### [2025-07-19 09:26] - [master] - [Documentation Enhancement]
+
+**Objective:** Add comprehensive binary usage instructions to distinguish between development and production usage patterns
+
+**Context:** docs: Add proper binary usage instructions to README
+
+**Files Modified:** armory-rust/README.md
+
+**Change Summary:**
+- Files changed:        1
+- Lines added: 38
+- Lines deleted: 8
+
+- Configuration/docs: armory-rust/README.md 
+
+**Technical Implementation:**
+- **Documentation Structure**: Added clear separation between system installation and local binary usage
+- **Production Usage**: Added `cargo install --path .` instructions for system-wide installation
+- **Development Usage**: Clarified when to use `cargo run` vs binary execution  
+- **Binary Path Instructions**: Added `./target/release/armory-rust` usage examples
+- **Command Examples**: Provided comprehensive examples for both installation methods
+- **User Experience**: Addressed user confusion about cargo vs binary usage patterns
+
+**Challenges Encountered:**
+- **User Confusion**: Initial README showed only cargo commands, leading to uncertainty about binary deployment
+- **Usage Pattern Clarity**: Needed to distinguish between development workflows and production deployment
+- **Documentation Balance**: Required clear explanation without overwhelming new users
+
+**Cross-References:**
+- Addresses user feedback about binary vs cargo usage expectations
+- Complements Phase 4 CLI Interface completion documentation
+- Supports production deployment preparation
+
+**Implementation Notes:**
+- System installation with `cargo install --path .` provides the `armory-rust` binary globally
+- Local binary usage requires building with `cargo build --release` first
+- Development commands using `cargo run` are slower but include debug information
+- Production binaries are optimized and suitable for distribution
+
+**Validation Results:**
+[Claude Code: Test results and validation]
+- Test suite results (X/Y passing)
+- Manual testing performed
+- Performance benchmarks if applicable
+- Code quality checks (clippy, fmt, etc.)
+
+**Cross-References:**
+- Commit: 019a0e68
+- Branch: master
+- Author: Grimm
+- Related work: [Claude Code: Link to related commits/issues]
+
+**Next Steps:**
+[Claude Code: What should be done next]
+- Follow-up tasks identified
+- Known issues to address
+- Future enhancements planned
+
+**Implementation Notes:**
+[Claude Code: Technical details for future reference]
+- Code patterns used
+- Important design decisions
+- Dependencies or constraints
+- Performance characteristics
+
+---
+
+
+### [2025-07-19 09:22] - [master] - [Bug Fix]
+
+**Objective:** [Claude Code: Describe the main goal of this work session]
+
+**Context:** fix: Update main project README to show Phase 4 as complete
+
+**Files Modified:** README.md
+
+**Change Summary:**
+- Files changed:        1
+- Lines added: 7
+- Lines deleted: 6
+
+- Configuration/docs: README.md 
+
+
+**Technical Implementation:**
+[Claude Code: Fill in key technical details]
+- What was built/changed?
+- Which modules/functions were affected?
+- Any new dependencies or APIs introduced?
+- Performance or architectural considerations?
+
+**Challenges Encountered:**
+[Claude Code: Document any issues faced and solutions]
+- Compilation errors and fixes
+- Test failures and resolutions
+- Design decisions and trade-offs
+- Integration challenges
+
+**Validation Results:**
+[Claude Code: Test results and validation]
+- Test suite results (X/Y passing)
+- Manual testing performed
+- Performance benchmarks if applicable
+- Code quality checks (clippy, fmt, etc.)
+
+**Cross-References:**
+- Commit: 0d30b60e
+- Branch: master
+- Author: Grimm
+- Related work: [Claude Code: Link to related commits/issues]
+
+**Next Steps:**
+[Claude Code: What should be done next]
+- Follow-up tasks identified
+- Known issues to address
+- Future enhancements planned
+
+**Implementation Notes:**
+[Claude Code: Technical details for future reference]
+- Code patterns used
+- Important design decisions
+- Dependencies or constraints
+- Performance characteristics
+
+---
+
+
+### [2025-07-19 09:20] - [master] - [Bug Fix]
+
+**Objective:** [Claude Code: Describe the main goal of this work session]
+
+**Context:** fix: Update README architecture section to show CLI as complete
+
+**Files Modified:** armory-rust/README.md
+
+**Change Summary:**
+- Files changed:        1
+- Lines added: 1
+- Lines deleted: 1
+
+- Configuration/docs: armory-rust/README.md 
+
+
+**Technical Implementation:**
+[Claude Code: Fill in key technical details]
+- What was built/changed?
+- Which modules/functions were affected?
+- Any new dependencies or APIs introduced?
+- Performance or architectural considerations?
+
+**Challenges Encountered:**
+[Claude Code: Document any issues faced and solutions]
+- Compilation errors and fixes
+- Test failures and resolutions
+- Design decisions and trade-offs
+- Integration challenges
+
+**Validation Results:**
+[Claude Code: Test results and validation]
+- Test suite results (X/Y passing)
+- Manual testing performed
+- Performance benchmarks if applicable
+- Code quality checks (clippy, fmt, etc.)
+
+**Cross-References:**
+- Commit: a321687c
+- Branch: master
+- Author: Grimm
+- Related work: [Claude Code: Link to related commits/issues]
+
+**Next Steps:**
+[Claude Code: What should be done next]
+- Follow-up tasks identified
+- Known issues to address
+- Future enhancements planned
+
+**Implementation Notes:**
+[Claude Code: Technical details for future reference]
+- Code patterns used
+- Important design decisions
+- Dependencies or constraints
+- Performance characteristics
+
+---
+
+
+### [2025-07-19 09:16] - [master] - [Documentation]
+
+**Objective:** [Claude Code: Describe the main goal of this work session]
+
+**Context:** docs: Update documentation for Phase 4 CLI Interface completion
+
+**Files Modified:** armory-rust/CHANGELOG.md,armory-rust/README.md,armory-rust/docs/DEVELOPMENT.md,armory-rust/docs/DEVELOPMENT_LOG.md,armory-rust/src/cli/commands.rs,armory-rust/src/cli/config.rs,armory-rust/src/cli/handlers.rs,armory-rust/src/cli/mod.rs,armory-rust/src/cli/tests.rs,armory-rust/src/compatibility/mod.rs,armory-rust/src/compatibility/rpc_compatibility.rs,armory-rust/src/compatibility/tests.rs,armory-rust/src/crypto/encryption.rs,armory-rust/src/crypto/kdf.rs,armory-rust/src/crypto/mod.rs,armory-rust/src/crypto/random.rs,armory-rust/src/crypto/signatures.rs,armory-rust/src/error.rs,armory-rust/src/lib.rs,armory-rust/src/main.rs,armory-rust/src/migration/legacy_import.rs,armory-rust/src/migration/mod.rs,armory-rust/src/migration/tests.rs,armory-rust/src/network/mod.rs,armory-rust/src/network/p2p.rs,armory-rust/src/network/rpc.rs,armory-rust/src/network/tests.rs,armory-rust/src/script/descriptors.rs,armory-rust/src/script/engine.rs,armory-rust/src/script/mod.rs,armory-rust/src/script/taproot.rs,armory-rust/src/script/witness_simple.rs,armory-rust/src/storage/legacy_import.rs,armory-rust/src/storage/mod.rs,armory-rust/src/storage/wallet_storage.rs,armory-rust/src/transaction/builder.rs,armory-rust/src/transaction/mod.rs,armory-rust/src/transaction/psbt.rs,armory-rust/src/transaction/tests.rs,armory-rust/src/wallet/descriptor_wallet.rs,armory-rust/src/wallet/hd_wallet.rs,armory-rust/src/wallet/mod.rs
+
+**Change Summary:**
+- Files changed:       42
+- Lines added: 4418
+- Lines deleted: 1420
+- Rust modules: armory-rust/src/cli/commands.rs armory-rust/src/cli/config.rs armory-rust/src/cli/handlers.rs armory-rust/src/cli/mod.rs armory-rust/src/cli/tests.rs armory-rust/src/compatibility/mod.rs armory-rust/src/compatibility/rpc_compatibility.rs armory-rust/src/compatibility/tests.rs armory-rust/src/crypto/encryption.rs armory-rust/src/crypto/kdf.rs 
+- Configuration/docs: armory-rust/CHANGELOG.md armory-rust/README.md armory-rust/docs/DEVELOPMENT.md armory-rust/docs/DEVELOPMENT_LOG.md 
+- Test files: armory-rust/src/cli/tests.rs armory-rust/src/compatibility/tests.rs armory-rust/src/migration/tests.rs armory-rust/src/network/tests.rs armory-rust/src/transaction/tests.rs 
+
+**Technical Implementation:**
+[Claude Code: Fill in key technical details]
+- What was built/changed?
+- Which modules/functions were affected?
+- Any new dependencies or APIs introduced?
+- Performance or architectural considerations?
+
+**Challenges Encountered:**
+[Claude Code: Document any issues faced and solutions]
+- Compilation errors and fixes
+- Test failures and resolutions
+- Design decisions and trade-offs
+- Integration challenges
+
+**Validation Results:**
+[Claude Code: Test results and validation]
+- Test suite results (X/Y passing)
+- Manual testing performed
+- Performance benchmarks if applicable
+- Code quality checks (clippy, fmt, etc.)
+
+**Cross-References:**
+- Commit: a226d753
+- Branch: master
+- Author: Grimm
+- Related work: [Claude Code: Link to related commits/issues]
+
+**Next Steps:**
+[Claude Code: What should be done next]
+- Follow-up tasks identified
+- Known issues to address
+- Future enhancements planned
+
+**Implementation Notes:**
+[Claude Code: Technical details for future reference]
+- Code patterns used
+- Important design decisions
+- Dependencies or constraints
+- Performance characteristics
+
+---
+
+
 ### [2025-07-19 Current Session] - [master] - [Phase 4 CLI Interface Implementation Complete]
 
 **Objective**: Complete Phase 4 CLI Interface implementation according to PRP requirements with comprehensive command-line wallet management
