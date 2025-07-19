@@ -34,7 +34,7 @@ src/
 ├── transaction/         # PSBT v2 builder, fee estimation, coin selection
 ├── script/              # Taproot/miniscript, script validation
 ├── network/             # ✅ BIP-324, Bitcoin Core RPC, Tor connectivity
-├── cli/                 # (Planned) CLI subsystem
+├── cli/                 # ✅ Complete CLI interface with full wallet management
 ```
 </details>
 
