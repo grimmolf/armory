@@ -10,10 +10,10 @@
 pub mod engine;
 pub mod descriptors;
 pub mod taproot;
-pub mod witness;
+pub mod witness_simple;
 
 // Re-exports for convenience
 pub use engine::ScriptEngine;
 pub use descriptors::{ScriptDescriptor, DescriptorType};
 pub use taproot::{TaprootSpendData, TaprootBuilder};
-pub use witness::WitnessGenerator;
+pub use witness_simple::WitnessGenerator;
