@@ -20,7 +20,20 @@ zeroize = { version = "1.7", features = ["derive"] }
 
 # Networking and async runtime
 tokio = { version = "1.35", features = ["full"] }
-reqwest = { version = "0.11", features = ["json"] }
+reqwest = { version = "0.11", features = ["json", "stream"] }
+
+# Network communication and encryption for BIP-324 foundation
+tokio-tungstenite = "0.21"  # WebSocket support
+futures-util = "0.3"        # Async utilities
+rand_core = "0.6"           # Secure randomness for network protocols
+
+# Tor and privacy networking
+tokio-socks = "0.5"         # SOCKS5 proxy support for Tor
+url = "2.5"                 # URL parsing for RPC endpoints
+
+# Low-level networking
+socket2 = "0.5"             # Advanced socket configuration
+trust-dns-resolver = "0.23" # DNS resolution with custom servers
 
 # Storage and serialization
 sled = "0.34"

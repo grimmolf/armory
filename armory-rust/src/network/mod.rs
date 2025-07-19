@@ -6,6 +6,9 @@
 pub mod p2p;
 pub mod rpc;
 
+#[cfg(test)]
+mod tests;
+
 // Re-exports for convenience
-pub use p2p::BitcoinP2P;
-pub use rpc::RpcClient;
+pub use p2p::{BitcoinP2P, P2PConfig, PeerInfo};
+pub use rpc::{RpcClient, RpcEndpoint, BlockchainInfo, NetworkInfo};
