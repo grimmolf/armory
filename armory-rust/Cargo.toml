@@ -1,0 +1,51 @@
+[package]
+name = "armory-rust"
+version = "0.1.0"
+edition = "2021"
+authors = ["Armory Modernization Team"]
+description = "Modern Rust implementation of Armory Bitcoin wallet"
+license = "AGPL-3.0"
+
+[dependencies]
+# Core Bitcoin libraries with Taproot support
+bitcoin = "0.32"
+secp256k1 = { version = "0.29", features = ["rand", "recovery", "global-context"] }
+bdk_wallet = "1.0"
+
+# Cryptographic libraries  
+chacha20poly1305 = "0.10"
+argon2 = "0.5"
+getrandom = "0.2"
+zeroize = { version = "1.7", features = ["derive"] }
+
+# Networking and async runtime
+tokio = { version = "1.35", features = ["full"] }
+reqwest = { version = "0.11", features = ["json"] }
+
+# Storage and serialization
+sled = "0.34"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# BIP implementations
+bip39 = "2.0"
+
+# Error handling and utilities
+thiserror = "1.0"
+anyhow = "1.0"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+# CLI interface
+clap = { version = "4.4", features = ["derive"] }
+
+# Utilities
+hex = "0.4"
+
+[dev-dependencies]
+tokio-test = "0.4"
+tempfile = "3.20"
+
+[features]
+default = ["std"]
+std = []
