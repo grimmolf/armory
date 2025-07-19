@@ -1,13 +1,13 @@
 //! Simplified Taproot support for basic functionality testing
-//! 
+//!
 //! This is a minimal implementation to enable compilation and basic testing.
 //! Full Taproot implementation will be completed in later phases.
 
-use crate::error::{TransactionResult, TransactionError};
+use crate::error::{TransactionError, TransactionResult};
 use bitcoin::{
     secp256k1::{All, Secp256k1, XOnlyPublicKey},
-    ScriptBuf, TxOut, PublicKey,
     taproot::TapTree,
+    PublicKey, ScriptBuf,
 };
 use std::collections::HashMap;
 
@@ -94,10 +94,7 @@ impl TaprootSpender {
     }
 
     /// Generate a simple script for testing
-    pub fn create_simple_script(
-        &self,
-        _pubkey: &PublicKey,
-    ) -> TransactionResult<ScriptBuf> {
+    pub fn create_simple_script(&self, _pubkey: &PublicKey) -> TransactionResult<ScriptBuf> {
         // Create a simple OP_1 script for testing
         let script = bitcoin::script::Builder::new()
             .push_opcode(bitcoin::opcodes::all::OP_PUSHNUM_1)
@@ -106,10 +103,7 @@ impl TaprootSpender {
     }
 
     /// Generate a timelock script for Taproot
-    pub fn timelock_script(
-        _pubkey: &PublicKey,
-        _locktime: u32,
-    ) -> TransactionResult<ScriptBuf> {
+    pub fn timelock_script(_pubkey: &PublicKey, _locktime: u32) -> TransactionResult<ScriptBuf> {
         // Simplified implementation - return basic script
         let script = bitcoin::script::Builder::new()
             .push_opcode(bitcoin::opcodes::all::OP_PUSHNUM_1)
@@ -135,7 +129,9 @@ impl TaprootSpender {
         threshold: usize,
     ) -> TransactionResult<ScriptBuf> {
         if threshold == 0 || threshold > pubkeys.len() {
-            return Err(TransactionError::ScriptValidation("Invalid threshold for multisig".to_string()));
+            return Err(TransactionError::ScriptValidation(
+                "Invalid threshold for multisig".to_string(),
+            ));
         }
 
         // Simplified implementation - return basic script
@@ -144,7 +140,7 @@ impl TaprootSpender {
             .push_int(pubkeys.len() as i64)
             .push_opcode(bitcoin::opcodes::all::OP_CHECKMULTISIG)
             .into_script();
-        
+
         Ok(script)
     }
 }
@@ -161,7 +157,7 @@ pub use TaprootSpender as TaprootBuilder;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bitcoin::{PrivateKey, Network};
+    use bitcoin::{Network, PrivateKey};
 
     #[test]
     fn test_taproot_spender_creation() {
@@ -175,9 +171,9 @@ mod tests {
         let private_key = PrivateKey::generate(Network::Regtest);
         let public_key = private_key.public_key(&Secp256k1::new());
         let internal_key = public_key.inner.x_only_public_key().0;
-        
+
         let spend_data = TaprootSpendData::key_only(internal_key).unwrap();
-        
+
         assert!(spend_data.supports_key_path());
         assert!(!spend_data.supports_script_path());
     }
@@ -187,7 +183,7 @@ mod tests {
         let spender = TaprootSpender::new();
         let private_key = PrivateKey::generate(Network::Regtest);
         let public_key = private_key.public_key(&Secp256k1::new());
-        
+
         let script = spender.create_simple_script(&public_key).unwrap();
         assert!(!script.is_empty());
     }

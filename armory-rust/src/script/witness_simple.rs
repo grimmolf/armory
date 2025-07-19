@@ -1,13 +1,12 @@
 //! Simplified witness generation for basic functionality testing
-//! 
+//!
 //! This is a minimal implementation to enable compilation and basic testing.
 //! Full witness generation will be implemented in later phases.
 
-use crate::error::{TransactionResult, TransactionError};
+use crate::error::TransactionResult;
 use bitcoin::{
-    ScriptBuf, Transaction, TxOut, 
-    secp256k1::{Secp256k1, All, PublicKey, SecretKey},
-    Witness,
+    secp256k1::{All, PublicKey, Secp256k1, SecretKey},
+    ScriptBuf, Transaction, TxOut, Witness,
 };
 
 /// Witness type for different script types
@@ -65,22 +64,22 @@ impl WitnessGenerator {
             WitnessType::P2WPKH => {
                 // Simplified P2WPKH witness
                 let mut witness = Witness::new();
-                witness.push(&[0u8; 64]); // Placeholder signature
-                witness.push(&[0u8; 33]); // Placeholder pubkey
+                witness.push([0u8; 64]); // Placeholder signature
+                witness.push([0u8; 33]); // Placeholder pubkey
                 Ok(witness)
             }
             WitnessType::TaprootKeyPath => {
                 // Simplified Taproot key-path witness
                 let mut witness = Witness::new();
-                witness.push(&[0u8; 64]); // Placeholder Schnorr signature
+                witness.push([0u8; 64]); // Placeholder Schnorr signature
                 Ok(witness)
             }
             WitnessType::TaprootScriptPath => {
                 // Simplified Taproot script-path witness
                 let mut witness = Witness::new();
-                witness.push(&[]); // Script execution result
-                witness.push(&[0u8; 32]); // Script
-                witness.push(&[0u8; 33]); // Control block
+                witness.push([]); // Script execution result
+                witness.push([0u8; 32]); // Script
+                witness.push([0u8; 33]); // Control block
                 Ok(witness)
             }
         }
@@ -106,8 +105,8 @@ impl WitnessGenerator {
     ) -> TransactionResult<Witness> {
         // Simplified implementation
         let mut witness = Witness::new();
-        witness.push(&[0u8; 64]); // Placeholder signature
-        witness.push(&[0u8; 33]); // Placeholder pubkey
+        witness.push([0u8; 64]); // Placeholder signature
+        witness.push([0u8; 33]); // Placeholder pubkey
         Ok(witness)
     }
 
@@ -121,7 +120,7 @@ impl WitnessGenerator {
     ) -> TransactionResult<Witness> {
         // Simplified implementation
         let mut witness = Witness::new();
-        witness.push(&[0u8; 64]); // Placeholder Schnorr signature
+        witness.push([0u8; 64]); // Placeholder Schnorr signature
         Ok(witness)
     }
 
@@ -136,9 +135,9 @@ impl WitnessGenerator {
     ) -> TransactionResult<Witness> {
         // Simplified implementation
         let mut witness = Witness::new();
-        witness.push(&[]); // Script execution result
-        witness.push(&[0u8; 32]); // Script
-        witness.push(&[0u8; 33]); // Control block
+        witness.push([]); // Script execution result
+        witness.push([0u8; 32]); // Script
+        witness.push([0u8; 33]); // Control block
         Ok(witness)
     }
 }
@@ -162,10 +161,22 @@ mod tests {
 
     #[test]
     fn test_witness_size_estimation() {
-        assert_eq!(WitnessGenerator::estimate_witness_size(&WitnessType::Legacy), 0);
-        assert_eq!(WitnessGenerator::estimate_witness_size(&WitnessType::P2WPKH), 109);
-        assert_eq!(WitnessGenerator::estimate_witness_size(&WitnessType::TaprootKeyPath), 65);
-        assert_eq!(WitnessGenerator::estimate_witness_size(&WitnessType::TaprootScriptPath), 100);
+        assert_eq!(
+            WitnessGenerator::estimate_witness_size(&WitnessType::Legacy),
+            0
+        );
+        assert_eq!(
+            WitnessGenerator::estimate_witness_size(&WitnessType::P2WPKH),
+            109
+        );
+        assert_eq!(
+            WitnessGenerator::estimate_witness_size(&WitnessType::TaprootKeyPath),
+            65
+        );
+        assert_eq!(
+            WitnessGenerator::estimate_witness_size(&WitnessType::TaprootScriptPath),
+            100
+        );
     }
 
     #[test]
@@ -173,28 +184,30 @@ mod tests {
         let generator = WitnessGenerator::new();
         let private_key = PrivateKey::generate(Network::Regtest);
         let public_key = private_key.public_key(&Secp256k1::new());
-        
+
         let signing_data = SigningData {
             private_key: private_key.inner,
             public_key: public_key.inner,
             script: None,
         };
 
-        let witness = generator.generate_witness(
-            &Transaction {
-                version: bitcoin::transaction::Version::TWO,
-                lock_time: bitcoin::absolute::LockTime::ZERO,
-                input: vec![],
-                output: vec![],
-            },
-            0,
-            &TxOut {
-                value: Amount::from_sat(100_000),
-                script_pubkey: ScriptBuf::new(),
-            },
-            &WitnessType::P2WPKH,
-            &signing_data,
-        ).unwrap();
+        let witness = generator
+            .generate_witness(
+                &Transaction {
+                    version: bitcoin::transaction::Version::TWO,
+                    lock_time: bitcoin::absolute::LockTime::ZERO,
+                    input: vec![],
+                    output: vec![],
+                },
+                0,
+                &TxOut {
+                    value: Amount::from_sat(100_000),
+                    script_pubkey: ScriptBuf::new(),
+                },
+                &WitnessType::P2WPKH,
+                &signing_data,
+            )
+            .unwrap();
 
         assert_eq!(witness.len(), 2); // signature + pubkey
     }

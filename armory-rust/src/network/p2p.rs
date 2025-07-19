@@ -1,22 +1,21 @@
 /// BIP-324 P2P implementation foundation
-/// 
+///
 /// Provides foundational structure for encrypted Bitcoin P2P communication.
 /// This implementation provides the architecture for BIP-324 and can be enhanced
 /// when stable BIP-324 crates become available.
-
 use crate::error::{NetworkError, NetworkResult};
-use bitcoin::{Network, Transaction, Txid, Block, BlockHash, p2p::{ServiceFlags, Address as P2pAddress}};
 use bitcoin::hashes::Hash;
-use chacha20poly1305::{ChaCha20Poly1305, Key as ChaChaKey, Nonce};
-use chacha20poly1305::aead::{Aead, KeyInit};
-use secp256k1::{Secp256k1, SecretKey, PublicKey, ecdh::SharedSecret};
-use std::net::{SocketAddr, ToSocketAddrs};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use tokio::net::{TcpStream, lookup_host};
+use bitcoin::{p2p::ServiceFlags, Block, BlockHash, Network, Transaction, Txid};
+use chacha20poly1305::aead::KeyInit;
+use chacha20poly1305::{ChaCha20Poly1305, Key as ChaChaKey};
+use rand_core::{OsRng, RngCore};
+use secp256k1::{PublicKey, Secp256k1, SecretKey};
+use std::net::SocketAddr;
+use std::time::{Duration, SystemTime};
+use tokio::net::{lookup_host, TcpStream};
 use tokio::time::timeout;
 use tokio_socks::tcp::Socks5Stream;
-use tracing::{debug, info, warn, error};
-use rand_core::{OsRng, RngCore};
+use tracing::{debug, info};
 
 /// Bitcoin P2P client with BIP-324 encrypted transport foundation
 #[derive(Debug)]
@@ -93,7 +92,10 @@ impl std::fmt::Debug for EncryptionContext {
         f.debug_struct("EncryptionContext")
             .field("send_counter", &self.send_counter)
             .field("recv_counter", &self.recv_counter)
-            .field("session_id_hash", &format!("{:02x}{:02x}...", self.session_id[0], self.session_id[1]))
+            .field(
+                "session_id_hash",
+                &format!("{:02x}{:02x}...", self.session_id[0], self.session_id[1]),
+            )
             .finish_non_exhaustive()
     }
 }
@@ -137,10 +139,10 @@ impl BitcoinP2P {
 
         // Resolve address
         let addr = self.resolve_address(peer_addr).await?;
-        
+
         // Establish connection (with optional Tor)
         let stream = self.establish_connection(addr).await?;
-        
+
         // Perform handshake
         if self.config.enable_v2_transport {
             self.perform_v2_handshake(stream).await?;
@@ -148,10 +150,10 @@ impl BitcoinP2P {
             self.perform_v1_handshake(stream).await?;
         }
 
-        self.connection_state = ConnectionState::Connected { 
-            since: SystemTime::now() 
+        self.connection_state = ConnectionState::Connected {
+            since: SystemTime::now(),
         };
-        
+
         info!("Successfully connected to peer: {}", peer_addr);
         Ok(())
     }
@@ -160,10 +162,11 @@ impl BitcoinP2P {
     async fn resolve_address(&self, addr: &str) -> NetworkResult<SocketAddr> {
         let addrs: Vec<SocketAddr> = lookup_host(addr)
             .await
-            .map_err(|e| NetworkError::Connection(format!("DNS resolution failed: {}", e)))?
+            .map_err(|e| NetworkError::Connection(format!("DNS resolution failed: {e}")))?
             .collect();
 
-        addrs.first()
+        addrs
+            .first()
             .copied()
             .ok_or_else(|| NetworkError::Connection("No addresses resolved".to_string()))
     }
@@ -175,23 +178,20 @@ impl BitcoinP2P {
             debug!("Connecting through Tor proxy: {}", tor_proxy);
             let stream = timeout(
                 self.config.connect_timeout,
-                Socks5Stream::connect(tor_proxy, addr)
+                Socks5Stream::connect(tor_proxy, addr),
             )
             .await
             .map_err(|_| NetworkError::Timeout)?
-            .map_err(|e| NetworkError::Connection(format!("Tor connection failed: {}", e)))?;
-            
+            .map_err(|e| NetworkError::Connection(format!("Tor connection failed: {e}")))?;
+
             stream.into_inner()
         } else {
             // Direct TCP connection
             debug!("Establishing direct TCP connection to: {}", addr);
-            timeout(
-                self.config.connect_timeout,
-                TcpStream::connect(addr)
-            )
-            .await
-            .map_err(|_| NetworkError::Timeout)?
-            .map_err(|e| NetworkError::Connection(format!("TCP connection failed: {}", e)))?
+            timeout(self.config.connect_timeout, TcpStream::connect(addr))
+                .await
+                .map_err(|_| NetworkError::Timeout)?
+                .map_err(|e| NetworkError::Connection(format!("TCP connection failed: {e}")))?
         };
 
         Ok(stream)
@@ -213,9 +213,9 @@ impl BitcoinP2P {
         // For now, create a placeholder encryption context
         let session_id = self.generate_session_id();
         let encryption_context = self.create_encryption_context(session_id)?;
-        
+
         self.encryption_context = Some(encryption_context);
-        
+
         info!("BIP-324 handshake completed (foundation implementation)");
         Ok(())
     }
@@ -227,7 +227,7 @@ impl BitcoinP2P {
 
         // TODO: Implement Bitcoin P2P v1 handshake
         // This would involve version message exchange, verack, etc.
-        
+
         info!("Bitcoin P2P v1 handshake completed (foundation implementation)");
         Ok(())
     }
@@ -247,8 +247,8 @@ impl BitcoinP2P {
         OsRng.fill_bytes(&mut send_key);
         OsRng.fill_bytes(&mut recv_key);
 
-        let send_cipher = ChaCha20Poly1305::new(&ChaChaKey::from_slice(&send_key));
-        let recv_cipher = ChaCha20Poly1305::new(&ChaChaKey::from_slice(&recv_key));
+        let send_cipher = ChaCha20Poly1305::new(ChaChaKey::from_slice(&send_key));
+        let recv_cipher = ChaCha20Poly1305::new(ChaChaKey::from_slice(&recv_key));
 
         Ok(EncryptionContext {
             send_cipher,
@@ -260,18 +260,24 @@ impl BitcoinP2P {
     }
 
     /// Broadcast transaction to connected peers
-    pub async fn broadcast_transaction(&mut self, _transaction: &Transaction) -> NetworkResult<Txid> {
+    pub async fn broadcast_transaction(
+        &mut self,
+        _transaction: &Transaction,
+    ) -> NetworkResult<Txid> {
         // TODO: Implement transaction broadcasting
         // This would involve encoding the transaction and sending it to peers
-        
+
         if !self.is_connected() {
-            return Err(NetworkError::Connection("Not connected to any peers".to_string()));
+            return Err(NetworkError::Connection(
+                "Not connected to any peers".to_string(),
+            ));
         }
 
         info!("Broadcasting transaction (foundation implementation)");
-        
+
         // Placeholder return - in real implementation, return actual txid
-        let placeholder_txid = Txid::from_raw_hash(bitcoin::hashes::sha256d::Hash::from_byte_array([0u8; 32]));
+        let placeholder_txid =
+            Txid::from_raw_hash(bitcoin::hashes::sha256d::Hash::from_byte_array([0u8; 32]));
         Ok(placeholder_txid)
     }
 
@@ -279,26 +285,30 @@ impl BitcoinP2P {
     pub async fn request_block(&mut self, _block_hash: &BlockHash) -> NetworkResult<Block> {
         // TODO: Implement block request
         // This would involve sending getdata message and receiving block
-        
+
         if !self.is_connected() {
-            return Err(NetworkError::Connection("Not connected to any peers".to_string()));
+            return Err(NetworkError::Connection(
+                "Not connected to any peers".to_string(),
+            ));
         }
 
         info!("Requesting block (foundation implementation)");
-        
+
         // Return error for now - real implementation would return actual block
-        Err(NetworkError::Protocol("Block request not yet implemented".to_string()))
+        Err(NetworkError::Protocol(
+            "Block request not yet implemented".to_string(),
+        ))
     }
 
     /// Discover peers from seed nodes
     pub async fn discover_peers(&mut self) -> NetworkResult<Vec<PeerInfo>> {
         let seed_nodes = self.get_seed_nodes();
-        
+
         info!("Discovering peers from {} seed nodes", seed_nodes.len());
-        
+
         // TODO: Implement peer discovery
         // This would involve connecting to seed nodes and requesting peer addresses
-        
+
         // Return placeholder peer list
         Ok(vec![])
     }
@@ -308,7 +318,7 @@ impl BitcoinP2P {
         match self.network {
             Network::Bitcoin => vec![
                 "seed.bitcoin.sipa.be:8333",
-                "dnsseed.bluematt.me:8333", 
+                "dnsseed.bluematt.me:8333",
                 "dnsseed.bitcoin.dashjr-list-of-p2p-nodes.us:8333",
                 "seed.bitcoinstats.com:8333",
                 "seed.bitcoin.jonasschnelli.ch:8333",
@@ -319,12 +329,8 @@ impl BitcoinP2P {
                 "seed.tbtc.petertodd.net:18333",
                 "testnet-seed.bluematt.me:18333",
             ],
-            Network::Signet => vec![
-                "signet-seed.bitcoin.sipa.be:38333",
-            ],
-            Network::Regtest => vec![
-                "localhost:18444",
-            ],
+            Network::Signet => vec!["signet-seed.bitcoin.sipa.be:38333"],
+            Network::Regtest => vec!["localhost:18444"],
             _ => vec![],
         }
     }
@@ -347,11 +353,11 @@ impl BitcoinP2P {
     /// Disconnect from all peers
     pub async fn disconnect(&mut self) -> NetworkResult<()> {
         info!("Disconnecting from peers");
-        
+
         // TODO: Clean up connections
         self.connection_state = ConnectionState::Disconnected;
         self.encryption_context = None;
-        
+
         info!("Disconnected from all peers");
         Ok(())
     }
@@ -383,7 +389,7 @@ mod tests {
     async fn test_p2p_client_creation() {
         let client = BitcoinP2P::new(Network::Regtest);
         assert!(client.is_ok());
-        
+
         let client = client.unwrap();
         assert_eq!(client.network(), Network::Regtest);
         assert!(!client.is_connected());
@@ -396,7 +402,7 @@ mod tests {
             max_connections: 16,
             ..Default::default()
         };
-        
+
         let client = BitcoinP2P::with_config(Network::Bitcoin, config);
         assert!(client.is_ok());
     }
@@ -406,7 +412,7 @@ mod tests {
         let client = BitcoinP2P::new(Network::Regtest).unwrap();
         let session_id1 = client.generate_session_id();
         let session_id2 = client.generate_session_id();
-        
+
         // Session IDs should be different (very high probability)
         assert_ne!(session_id1, session_id2);
     }
@@ -416,7 +422,7 @@ mod tests {
         let client = BitcoinP2P::new(Network::Bitcoin).unwrap();
         let seeds = client.get_seed_nodes();
         assert!(!seeds.is_empty());
-        
+
         let testnet_client = BitcoinP2P::new(Network::Testnet).unwrap();
         let testnet_seeds = testnet_client.get_seed_nodes();
         assert!(!testnet_seeds.is_empty());
@@ -426,10 +432,10 @@ mod tests {
     async fn test_tor_configuration() {
         let mut client = BitcoinP2P::new(Network::Bitcoin).unwrap();
         let tor_proxy = "127.0.0.1:9050".parse().unwrap();
-        
+
         client.set_tor_proxy(tor_proxy);
         assert_eq!(client.config.tor_proxy, Some(tor_proxy));
-        
+
         client.disable_tor();
         assert_eq!(client.config.tor_proxy, None);
     }
@@ -438,10 +444,10 @@ mod tests {
     fn test_encryption_context_creation() {
         let client = BitcoinP2P::new(Network::Regtest).unwrap();
         let session_id = [1u8; 32];
-        
+
         let context = client.create_encryption_context(session_id);
         assert!(context.is_ok());
-        
+
         let context = context.unwrap();
         assert_eq!(context.session_id, session_id);
         assert_eq!(context.send_counter, 0);

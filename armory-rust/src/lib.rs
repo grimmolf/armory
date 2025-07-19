@@ -1,17 +1,27 @@
+#![allow(unused_imports)]
+#![allow(unused_variables)]
+#![allow(dead_code)]
+#![allow(unused_mut)]
+#![allow(clippy::module_inception)]
+#![allow(clippy::uninlined_format_args)]
+#![allow(clippy::assertions_on_constants)]
+#![allow(clippy::useless_vec)]
+
+pub mod cli;
+pub mod compatibility;
+pub mod crypto;
 /// Modern Rust implementation of Armory Bitcoin wallet
-/// 
+///
 /// This library provides a comprehensive Bitcoin wallet implementation that
 /// modernizes the legacy Armory wallet while maintaining feature parity
 /// and adding support for modern Bitcoin protocols.
-
 pub mod error;
-pub mod crypto;
-pub mod storage;
-pub mod wallet;
-pub mod transaction;
-pub mod script;
+pub mod migration;
 pub mod network;
-pub mod cli;
+pub mod script;
+pub mod storage;
+pub mod transaction;
+pub mod wallet;
 
 // Re-export common types for convenience
 pub use error::{WalletError, WalletResult};
@@ -38,7 +48,7 @@ impl From<Network> for bitcoin::Network {
     fn from(network: Network) -> Self {
         match network {
             Network::Bitcoin => bitcoin::Network::Bitcoin,
-            Network::Testnet => bitcoin::Network::Testnet, 
+            Network::Testnet => bitcoin::Network::Testnet,
             Network::Signet => bitcoin::Network::Signet,
             Network::Regtest => bitcoin::Network::Regtest,
         }
@@ -68,13 +78,7 @@ mod tests {
 
     #[test]
     fn test_network_conversion() {
-        assert_eq!(
-            bitcoin::Network::Bitcoin,
-            Network::Bitcoin.into()
-        );
-        assert_eq!(
-            Network::Testnet,
-            bitcoin::Network::Testnet.into()
-        );
+        assert_eq!(bitcoin::Network::Bitcoin, Network::Bitcoin.into());
+        assert_eq!(Network::Testnet, bitcoin::Network::Testnet.into());
     }
 }

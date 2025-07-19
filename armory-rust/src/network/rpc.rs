@@ -1,16 +1,15 @@
 /// Bitcoin Core RPC client with failover support
-/// 
+///
 /// Provides robust RPC communication with multiple Bitcoin Core nodes,
 /// automatic failover, and comprehensive error handling.
-
 use crate::error::{NetworkError, NetworkResult};
-use bitcoin::{Transaction, Txid, Address, Amount, Network, Block, BlockHash};
-use reqwest::{Client, Response};
+use bitcoin::{Address, Block, BlockHash, Network, Transaction, Txid};
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::time::Duration;
 use tokio::time::timeout;
-use tracing::{debug, warn, error, info};
+use tracing::{debug, info, warn};
 use url::Url;
 
 /// RPC endpoint configuration
@@ -24,10 +23,14 @@ pub struct RpcEndpoint {
 
 impl RpcEndpoint {
     /// Create new RPC endpoint with authentication
-    pub fn new(url: &str, username: Option<String>, password: Option<String>) -> NetworkResult<Self> {
+    pub fn new(
+        url: &str,
+        username: Option<String>,
+        password: Option<String>,
+    ) -> NetworkResult<Self> {
         let url = Url::parse(url)
-            .map_err(|e| NetworkError::InvalidResponse(format!("Invalid RPC URL: {}", e)))?;
-        
+            .map_err(|e| NetworkError::InvalidResponse(format!("Invalid RPC URL: {e}")))?;
+
         Ok(Self {
             url,
             username,
@@ -80,13 +83,15 @@ impl RpcClient {
     /// Create new RPC client with multiple endpoints
     pub fn new(endpoints: Vec<RpcEndpoint>, network: Network) -> NetworkResult<Self> {
         if endpoints.is_empty() {
-            return Err(NetworkError::Connection("No RPC endpoints provided".to_string()));
+            return Err(NetworkError::Connection(
+                "No RPC endpoints provided".to_string(),
+            ));
         }
 
         let client = Client::builder()
             .timeout(Duration::from_secs(60))
             .build()
-            .map_err(|e| NetworkError::Connection(format!("Failed to create HTTP client: {}", e)))?;
+            .map_err(|e| NetworkError::Connection(format!("Failed to create HTTP client: {e}")))?;
 
         Ok(Self {
             endpoints,
@@ -118,7 +123,7 @@ impl RpcClient {
     }
 
     /// Manually trigger failover (for testing)
-    #[cfg(test)] 
+    #[cfg(test)]
     pub fn test_failover_to_next_endpoint(&mut self) {
         self.failover_to_next_endpoint();
     }
@@ -127,9 +132,12 @@ impl RpcClient {
     fn failover_to_next_endpoint(&mut self) {
         let old_endpoint = self.current_endpoint;
         self.current_endpoint = (self.current_endpoint + 1) % self.endpoints.len();
-        
+
         if self.current_endpoint != old_endpoint {
-            info!("Failed over from endpoint {} to {}", old_endpoint, self.current_endpoint);
+            info!(
+                "Failed over from endpoint {} to {}",
+                old_endpoint, self.current_endpoint
+            );
         }
     }
 
@@ -145,7 +153,10 @@ impl RpcClient {
             match self.make_rpc_call(method, params.clone()).await {
                 Ok(result) => return Ok(result),
                 Err(e) => {
-                    warn!("RPC call failed on endpoint {}: {}", self.current_endpoint, e);
+                    warn!(
+                        "RPC call failed on endpoint {}: {}",
+                        self.current_endpoint, e
+                    );
                     self.failover_to_next_endpoint();
                     attempts += 1;
                 }
@@ -153,8 +164,8 @@ impl RpcClient {
         }
 
         Err(NetworkError::Rpc(format!(
-            "All {} endpoints failed after {} attempts", 
-            self.endpoints.len(), 
+            "All {} endpoints failed after {} attempts",
+            self.endpoints.len(),
             attempts
         )))
     }
@@ -174,7 +185,9 @@ impl RpcClient {
 
         debug!("Making RPC call to {}: {}", endpoint.url, method);
 
-        let mut req = self.client.post(endpoint.url.as_str())
+        let mut req = self
+            .client
+            .post(endpoint.url.as_str())
             .json(&request)
             .header("Content-Type", "application/json");
 
@@ -186,12 +199,12 @@ impl RpcClient {
         let response = timeout(endpoint.timeout, req.send())
             .await
             .map_err(|_| NetworkError::Timeout)?
-            .map_err(|e| NetworkError::Connection(format!("HTTP request failed: {}", e)))?;
+            .map_err(|e| NetworkError::Connection(format!("HTTP request failed: {e}")))?;
 
         if !response.status().is_success() {
             return Err(NetworkError::Rpc(format!(
-                "HTTP error {}: {}", 
-                response.status(), 
+                "HTTP error {}: {}",
+                response.status(),
                 response.text().await.unwrap_or_default()
             )));
         }
@@ -199,10 +212,13 @@ impl RpcClient {
         let rpc_response: RpcResponse<T> = response
             .json()
             .await
-            .map_err(|e| NetworkError::InvalidResponse(format!("Failed to parse JSON: {}", e)))?;
+            .map_err(|e| NetworkError::InvalidResponse(format!("Failed to parse JSON: {e}")))?;
 
         if let Some(error) = rpc_response.error {
-            return Err(NetworkError::Rpc(format!("RPC error {}: {}", error.code, error.message)));
+            return Err(NetworkError::Rpc(format!(
+                "RPC error {}: {}",
+                error.code, error.message
+            )));
         }
 
         rpc_response.result.ok_or_else(|| {
@@ -212,7 +228,8 @@ impl RpcClient {
 
     /// Get blockchain information
     pub async fn get_blockchain_info(&mut self) -> NetworkResult<BlockchainInfo> {
-        self.call_with_failover("getblockchaininfo", json!([])).await
+        self.call_with_failover("getblockchaininfo", json!([]))
+            .await
     }
 
     /// Get network information
@@ -222,78 +239,86 @@ impl RpcClient {
 
     /// Get best block hash
     pub async fn get_best_block_hash(&mut self) -> NetworkResult<BlockHash> {
-        let hash_str: String = self.call_with_failover("getbestblockhash", json!([])).await?;
-        hash_str.parse()
-            .map_err(|e| NetworkError::InvalidResponse(format!("Invalid block hash: {}", e)))
+        let hash_str: String = self
+            .call_with_failover("getbestblockhash", json!([]))
+            .await?;
+        hash_str
+            .parse()
+            .map_err(|e| NetworkError::InvalidResponse(format!("Invalid block hash: {e}")))
     }
 
     /// Get block by hash
     pub async fn get_block(&mut self, block_hash: &BlockHash) -> NetworkResult<Block> {
-        let block_hex: String = self.call_with_failover(
-            "getblock", 
-            json!([block_hash.to_string(), 0])
-        ).await?;
-        
+        let block_hex: String = self
+            .call_with_failover("getblock", json!([block_hash.to_string(), 0]))
+            .await?;
+
         let block_bytes = hex::decode(&block_hex)
-            .map_err(|e| NetworkError::InvalidResponse(format!("Invalid block hex: {}", e)))?;
-        
+            .map_err(|e| NetworkError::InvalidResponse(format!("Invalid block hex: {e}")))?;
+
         bitcoin::consensus::deserialize(&block_bytes)
-            .map_err(|e| NetworkError::InvalidResponse(format!("Failed to deserialize block: {}", e)))
+            .map_err(|e| NetworkError::InvalidResponse(format!("Failed to deserialize block: {e}")))
     }
 
     /// Get transaction by ID
     pub async fn get_transaction(&mut self, txid: &Txid) -> NetworkResult<Transaction> {
-        let tx_hex: String = self.call_with_failover(
-            "getrawtransaction", 
-            json!([txid.to_string(), false])
-        ).await?;
-        
+        let tx_hex: String = self
+            .call_with_failover("getrawtransaction", json!([txid.to_string(), false]))
+            .await?;
+
         let tx_bytes = hex::decode(&tx_hex)
-            .map_err(|e| NetworkError::InvalidResponse(format!("Invalid transaction hex: {}", e)))?;
-        
-        bitcoin::consensus::deserialize(&tx_bytes)
-            .map_err(|e| NetworkError::InvalidResponse(format!("Failed to deserialize transaction: {}", e)))
+            .map_err(|e| NetworkError::InvalidResponse(format!("Invalid transaction hex: {e}")))?;
+
+        bitcoin::consensus::deserialize(&tx_bytes).map_err(|e| {
+            NetworkError::InvalidResponse(format!("Failed to deserialize transaction: {e}"))
+        })
     }
 
     /// Broadcast transaction to network
     pub async fn send_raw_transaction(&mut self, transaction: &Transaction) -> NetworkResult<Txid> {
         let tx_hex = hex::encode(bitcoin::consensus::serialize(transaction));
-        let txid_str: String = self.call_with_failover(
-            "sendrawtransaction", 
-            json!([tx_hex])
-        ).await?;
-        
-        txid_str.parse()
-            .map_err(|e| NetworkError::InvalidResponse(format!("Invalid transaction ID: {}", e)))
+        let txid_str: String = self
+            .call_with_failover("sendrawtransaction", json!([tx_hex]))
+            .await?;
+
+        txid_str
+            .parse()
+            .map_err(|e| NetworkError::InvalidResponse(format!("Invalid transaction ID: {e}")))
     }
 
     /// Test mempool acceptance of transaction
-    pub async fn test_mempool_accept(&mut self, transaction: &Transaction) -> NetworkResult<MempoolAcceptResult> {
+    pub async fn test_mempool_accept(
+        &mut self,
+        transaction: &Transaction,
+    ) -> NetworkResult<MempoolAcceptResult> {
         let tx_hex = hex::encode(bitcoin::consensus::serialize(transaction));
-        let results: Vec<MempoolAcceptResult> = self.call_with_failover(
-            "testmempoolaccept", 
-            json!([[tx_hex]])
-        ).await?;
-        
-        results.into_iter().next()
+        let results: Vec<MempoolAcceptResult> = self
+            .call_with_failover("testmempoolaccept", json!([[tx_hex]]))
+            .await?;
+
+        results
+            .into_iter()
+            .next()
             .ok_or_else(|| NetworkError::InvalidResponse("Empty mempool accept result".to_string()))
     }
 
     /// Get estimated fee rate for confirmation target
-    pub async fn estimate_smart_fee(&mut self, conf_target: u32) -> NetworkResult<EstimateSmartFeeResult> {
-        self.call_with_failover(
-            "estimatesmartfee", 
-            json!([conf_target])
-        ).await
+    pub async fn estimate_smart_fee(
+        &mut self,
+        conf_target: u32,
+    ) -> NetworkResult<EstimateSmartFeeResult> {
+        self.call_with_failover("estimatesmartfee", json!([conf_target]))
+            .await
     }
 
     /// Get UTXO information for address
     pub async fn get_address_utxos(&mut self, address: &Address) -> NetworkResult<Vec<UtxoInfo>> {
         // Note: This requires Bitcoin Core with address indexing enabled
         self.call_with_failover(
-            "getaddressutxos", 
-            json!([{"addresses": [address.to_string()]}])
-        ).await
+            "getaddressutxos",
+            json!([{"addresses": [address.to_string()]}]),
+        )
+        .await
     }
 
     /// Check if endpoint is reachable
@@ -304,7 +329,8 @@ impl RpcClient {
 
     /// Get connection count
     pub async fn get_connection_count(&mut self) -> NetworkResult<u32> {
-        self.call_with_failover("getconnectioncount", json!([])).await
+        self.call_with_failover("getconnectioncount", json!([]))
+            .await
     }
 }
 
@@ -360,7 +386,7 @@ pub struct EstimateSmartFeeResult {
 pub struct UtxoInfo {
     pub address: String,
     pub txid: String,
-    pub outputIndex: u32,
+    pub output_index: u32,
     pub script: String,
     pub satoshis: u64,
     pub height: u32,
@@ -374,23 +400,20 @@ mod tests {
     #[tokio::test]
     async fn test_rpc_client_creation() {
         let endpoint = RpcEndpoint::new(
-            "http://localhost:8332", 
-            Some("user".to_string()), 
-            Some("pass".to_string())
-        ).unwrap();
-        
+            "http://localhost:8332",
+            Some("user".to_string()),
+            Some("pass".to_string()),
+        )
+        .unwrap();
+
         let client = RpcClient::single_endpoint(endpoint, Network::Regtest);
         assert!(client.is_ok());
     }
 
-    #[tokio::test] 
+    #[tokio::test]
     async fn test_rpc_endpoint_parsing() {
-        let endpoint = RpcEndpoint::new(
-            "http://localhost:8332",
-            None,
-            None
-        ).unwrap();
-        
+        let endpoint = RpcEndpoint::new("http://localhost:8332", None, None).unwrap();
+
         assert_eq!(endpoint.url.as_str(), "http://localhost:8332/");
         assert_eq!(endpoint.timeout, Duration::from_secs(30));
     }
@@ -399,9 +422,9 @@ mod tests {
     async fn test_rpc_failover_logic() {
         let endpoint1 = RpcEndpoint::new("http://localhost:8332", None, None).unwrap();
         let endpoint2 = RpcEndpoint::new("http://localhost:8333", None, None).unwrap();
-        
+
         let mut client = RpcClient::new(vec![endpoint1, endpoint2], Network::Regtest).unwrap();
-        
+
         assert_eq!(client.current_endpoint, 0);
         client.failover_to_next_endpoint();
         assert_eq!(client.current_endpoint, 1);

@@ -1,12 +1,12 @@
 //! Simplified script validation engine for basic functionality testing
-//! 
+//!
 //! This is a minimal implementation to enable compilation and basic testing.
 //! Full script validation will be implemented in later phases.
 
-use crate::error::{TransactionResult, TransactionError};
+use crate::error::TransactionResult;
 use bitcoin::{
+    secp256k1::{All, Secp256k1},
     ScriptBuf, Transaction, TxOut,
-    secp256k1::{Secp256k1, All, XOnlyPublicKey},
 };
 
 /// Script validation context
@@ -51,11 +51,11 @@ impl ScriptEngine {
     ) -> TransactionResult<ValidationResult> {
         // Simplified validation - always pass for testing
         // TODO: Implement proper script validation
-        
+
         if script_pubkey.is_empty() {
             return Ok(ValidationResult::Invalid("Empty script".to_string()));
         }
-        
+
         // For now, return valid to enable testing
         Ok(ValidationResult::Valid)
     }
@@ -103,7 +103,7 @@ impl Default for ScriptEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bitcoin::{Address, Network, Amount};
+    use bitcoin::{Address, Amount, Network};
 
     #[test]
     fn test_script_engine_creation() {
@@ -131,9 +131,14 @@ mod tests {
         };
 
         let empty_script = ScriptBuf::new();
-        let result = engine.validate_script(&context, &empty_script, None, None).unwrap();
-        
-        assert_eq!(result, ValidationResult::Invalid("Empty script".to_string()));
+        let result = engine
+            .validate_script(&context, &empty_script, None, None)
+            .unwrap();
+
+        assert_eq!(
+            result,
+            ValidationResult::Invalid("Empty script".to_string())
+        );
     }
 
     #[test]
@@ -159,9 +164,11 @@ mod tests {
         let script = bitcoin::script::Builder::new()
             .push_opcode(bitcoin::opcodes::all::OP_PUSHNUM_1)
             .into_script();
-            
-        let result = engine.validate_script(&context, &script, None, None).unwrap();
-        
+
+        let result = engine
+            .validate_script(&context, &script, None, None)
+            .unwrap();
+
         assert_eq!(result, ValidationResult::Valid);
     }
 }

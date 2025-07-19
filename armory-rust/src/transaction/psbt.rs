@@ -1,21 +1,19 @@
+use crate::error::{TransactionError, TransactionResult};
 /// PSBT v2 implementation (BIP-370)
-/// 
+///
 /// This module implements BIP-370 PSBT version 2 functionality
 /// with support for independent input/output addition and improved
 /// transaction construction workflows.
-
 use bitcoin::{
-    psbt::{Input, Output, Psbt as PsbtV0},
-    Transaction, TxIn, TxOut, Witness, OutPoint, Amount,
-    ScriptBuf, PublicKey, XOnlyPublicKey,
-    taproot::{Signature as TaprootSignature, TapLeafHash, ControlBlock, LeafVersion, TapTree},
-    bip32::{Fingerprint, DerivationPath, ExtendedPubKey},
+    absolute::LockTime,
+    bip32::{DerivationPath, Fingerprint},
     ecdsa::Signature as EcdsaSignature,
-    Txid, Sequence, absolute::LockTime
+    taproot::{ControlBlock, LeafVersion, Signature as TaprootSignature, TapLeafHash, TapTree},
+    Amount, OutPoint, PublicKey, ScriptBuf, Sequence, Transaction, TxIn, TxOut, Txid, Witness,
+    XOnlyPublicKey,
 };
 use psbt::PsbtSighashType;
 use std::collections::HashMap;
-use crate::error::{TransactionResult, TransactionError};
 
 /// PSBT v2 structure implementing BIP-370
 #[derive(Debug, Clone)]
@@ -113,7 +111,7 @@ impl PsbtV2 {
             output_count: 0,
         })
     }
-    
+
     /// Create PSBT v2 from transaction template
     pub fn from_tx_template(
         inputs: Vec<(Txid, u32)>,
@@ -121,21 +119,21 @@ impl PsbtV2 {
         locktime: Option<u32>,
     ) -> TransactionResult<Self> {
         let mut psbt = Self::new()?;
-        
+
         // Add inputs
         for (txid, output_index) in inputs {
             psbt.add_input(txid, output_index, None)?;
         }
-        
+
         // Add outputs
         for (script, amount) in outputs {
             psbt.add_output(amount, script)?;
         }
-        
+
         psbt.fallback_locktime = locktime;
         Ok(psbt)
     }
-    
+
     /// Add input to PSBT v2
     pub fn add_input(
         &mut self,
@@ -164,12 +162,12 @@ impl PsbtV2 {
             previous_output_index,
             sequence,
         };
-        
+
         self.inputs.push(input);
         self.input_count = self.inputs.len() as u32;
         Ok(())
     }
-    
+
     /// Add output to PSBT v2
     pub fn add_output(&mut self, amount: Amount, script: ScriptBuf) -> TransactionResult<()> {
         let output = PsbtV2Output {
@@ -182,98 +180,119 @@ impl PsbtV2 {
             tap_tree: None,
             tap_key_origins: HashMap::new(),
         };
-        
+
         self.outputs.push(output);
         self.output_count = self.outputs.len() as u32;
         Ok(())
     }
-    
+
     /// Set witness UTXO for input
     pub fn set_witness_utxo(&mut self, input_index: usize, utxo: TxOut) -> TransactionResult<()> {
         if input_index >= self.inputs.len() {
-            return Err(TransactionError::InvalidInput("Input index out of range".to_string()));
+            return Err(TransactionError::InvalidInput(
+                "Input index out of range".to_string(),
+            ));
         }
-        
+
         self.inputs[input_index].witness_utxo = Some(utxo);
         Ok(())
     }
-    
+
     /// Set non-witness UTXO for input
-    pub fn set_non_witness_utxo(&mut self, input_index: usize, tx: Transaction) -> TransactionResult<()> {
+    pub fn set_non_witness_utxo(
+        &mut self,
+        input_index: usize,
+        tx: Transaction,
+    ) -> TransactionResult<()> {
         if input_index >= self.inputs.len() {
-            return Err(TransactionError::InvalidInput("Input index out of range".to_string()));
+            return Err(TransactionError::InvalidInput(
+                "Input index out of range".to_string(),
+            ));
         }
-        
+
         self.inputs[input_index].non_witness_utxo = Some(tx);
         Ok(())
     }
-    
+
     /// Get total input value
     pub fn total_input_value(&self) -> TransactionResult<Amount> {
         let mut total = Amount::ZERO;
-        
+
         for input in &self.inputs {
             if let Some(utxo) = &input.witness_utxo {
-                total = total.checked_add(utxo.value)
-                    .ok_or_else(|| TransactionError::InvalidAmount("Input value overflow".to_string()))?;
+                total = total.checked_add(utxo.value).ok_or_else(|| {
+                    TransactionError::InvalidAmount("Input value overflow".to_string())
+                })?;
             } else if let Some(tx) = &input.non_witness_utxo {
-                let utxo = tx.output.get(input.previous_output_index as usize)
-                    .ok_or_else(|| TransactionError::InvalidInput("Invalid previous output index".to_string()))?;
-                total = total.checked_add(utxo.value)
-                    .ok_or_else(|| TransactionError::InvalidAmount("Input value overflow".to_string()))?;
+                let utxo = tx
+                    .output
+                    .get(input.previous_output_index as usize)
+                    .ok_or_else(|| {
+                        TransactionError::InvalidInput("Invalid previous output index".to_string())
+                    })?;
+                total = total.checked_add(utxo.value).ok_or_else(|| {
+                    TransactionError::InvalidAmount("Input value overflow".to_string())
+                })?;
             } else {
-                return Err(TransactionError::InvalidInput("Missing UTXO data for input".to_string()));
+                return Err(TransactionError::InvalidInput(
+                    "Missing UTXO data for input".to_string(),
+                ));
             }
         }
-        
+
         Ok(total)
     }
-    
+
     /// Get total output value
     pub fn total_output_value(&self) -> TransactionResult<Amount> {
         let mut total = Amount::ZERO;
-        
+
         for output in &self.outputs {
-            total = total.checked_add(output.amount)
-                .ok_or_else(|| TransactionError::InvalidAmount("Output value overflow".to_string()))?;
+            total = total.checked_add(output.amount).ok_or_else(|| {
+                TransactionError::InvalidAmount("Output value overflow".to_string())
+            })?;
         }
-        
+
         Ok(total)
     }
-    
+
     /// Calculate transaction fee
     pub fn fee(&self) -> TransactionResult<Amount> {
         let input_value = self.total_input_value()?;
         let output_value = self.total_output_value()?;
-        
-        input_value.checked_sub(output_value)
+
+        input_value
+            .checked_sub(output_value)
             .ok_or_else(|| TransactionError::InvalidAmount("Insufficient input value".to_string()))
     }
-    
+
     /// Check if PSBT is ready for finalization
     pub fn is_ready_for_finalization(&self) -> bool {
         // All inputs must have either final scripts or sufficient signatures
         for input in &self.inputs {
-            let has_final_scripts = input.final_script_sig.is_some() || input.final_script_witness.is_some();
+            let has_final_scripts =
+                input.final_script_sig.is_some() || input.final_script_witness.is_some();
             let has_signature = !input.partial_sigs.is_empty() || input.tap_key_sig.is_some();
-            
+
             if !has_final_scripts && !has_signature {
                 return false;
             }
         }
-        
+
         true
     }
-    
+
     /// Finalize PSBT to create final transaction
     pub fn finalize(&self) -> TransactionResult<Transaction> {
         if !self.is_ready_for_finalization() {
-            return Err(TransactionError::InvalidPsbt("PSBT not ready for finalization".to_string()));
+            return Err(TransactionError::InvalidPsbt(
+                "PSBT not ready for finalization".to_string(),
+            ));
         }
-        
+
         let mut inputs = Vec::new();
         let mut outputs = Vec::new();
-        
+
         // Build transaction inputs
         for input in &self.inputs {
             let txin = TxIn {
@@ -287,7 +306,7 @@ impl PsbtV2 {
             };
             inputs.push(txin);
         }
-        
+
         // Build transaction outputs
         for output in &self.outputs {
             let txout = TxOut {
@@ -296,11 +315,12 @@ impl PsbtV2 {
             };
             outputs.push(txout);
         }
-        
+
         Ok(Transaction {
             version: bitcoin::transaction::Version::TWO,
-            lock_time: LockTime::from_height(self.fallback_locktime.unwrap_or(0))
-                .map_err(|_| TransactionError::InvalidLocktime("Invalid locktime value".to_string()))?,
+            lock_time: LockTime::from_height(self.fallback_locktime.unwrap_or(0)).map_err(
+                |_| TransactionError::InvalidLocktime("Invalid locktime value".to_string()),
+            )?,
             input: inputs,
             output: outputs,
         })

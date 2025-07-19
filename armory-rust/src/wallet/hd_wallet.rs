@@ -1,7 +1,6 @@
 /// HD wallet implementation
-/// 
+///
 /// This is a placeholder for BIP-32 hierarchical deterministic wallet functionality.
-
 use crate::error::WalletResult;
 
 /// HD wallet structure
