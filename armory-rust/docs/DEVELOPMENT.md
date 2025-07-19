@@ -250,19 +250,53 @@ pub fn random_private_key() -> PrivateKey {
    cargo fmt          # Code formatting
    ```
 
-3. **Commit Changes**
+3. **Automated Quality Validation**
+   ```bash
+   # Test the automation system
+   ../../scripts/dev-log-helper.sh test
+   
+   # Check automation status
+   ../../scripts/dev-log-helper.sh status
+   ```
+
+4. **Commit Changes (Automated Validation)**
    ```bash
    git add .
    git commit -m "feat: descriptive commit message"
+   # Pre-commit hook automatically runs:
+   # - cargo fmt --check
+   # - cargo clippy 
+   # - cargo check
+   
+   # Post-commit hook automatically:
+   # - Creates detailed log entry in DEVELOPMENT_LOG.md
+   # - Analyzes changes and categorizes commit type
+   # - Generates structured template for session details
    ```
 
-4. **Pre-submission Checklist**
+5. **Development Log Management**
    ```bash
+   # View recent log entries
+   cat docs/DEVELOPMENT_LOG.md
+   
+   # Manual log entry (if needed)
+   ../../scripts/dev-log-helper.sh update "Session description"
+   
+   # Clean placeholder entries
+   ../../scripts/dev-log-helper.sh clean
+   ```
+
+6. **Pre-submission Checklist (Automated)**
+   ```bash
+   # Quality gates (run automatically by pre-commit hook)
    cargo test         # All tests pass
    cargo clippy       # No clippy warnings
    cargo fmt --check  # Code is formatted
    cargo audit        # No security vulnerabilities
    cargo doc          # Documentation builds
+   
+   # Verify development log is updated
+   tail -n 50 docs/DEVELOPMENT_LOG.md
    ```
 
 ### Code Quality Standards
@@ -618,6 +652,159 @@ fi
 
 echo "Pre-commit checks passed!"
 ```
+
+## 🔧 Development Automation System
+
+The project includes comprehensive automation for development workflow and session tracking.
+
+### 📋 **Automation Components**
+
+#### Git Hooks (Located in `../../.git/hooks/`)
+
+1. **Pre-commit Hook** (`pre-commit`)
+   - Runs before each commit
+   - Validates code quality (fmt, clippy, check)
+   - Prevents commits with quality issues
+   - Provides development logging reminders
+
+2. **Post-commit Hook** (`post-commit`)
+   - Runs after successful commits
+   - Detects Claude Code commits automatically
+   - Creates detailed log entry templates
+   - Analyzes changes and categorizes work
+
+#### Helper Script (`../../scripts/dev-log-helper.sh`)
+
+```bash
+# Check system status
+../../scripts/dev-log-helper.sh status
+
+# Test hooks and quality gates  
+../../scripts/dev-log-helper.sh test
+
+# Create manual log entry
+../../scripts/dev-log-helper.sh update "Description"
+
+# Clean placeholder entries
+../../scripts/dev-log-helper.sh clean
+
+# Show help and usage
+../../scripts/dev-log-helper.sh --help
+```
+
+### 📝 **Development Log Management**
+
+#### Automatic Log Entry Creation
+
+When you commit, the system automatically:
+1. **Analyzes your changes** (files, lines, types)
+2. **Categorizes the work** (feature, bug fix, refactoring, etc.)
+3. **Creates structured entry** in `docs/DEVELOPMENT_LOG.md`
+4. **Generates template sections** for you to fill during sessions
+
+#### Template Structure
+
+```markdown
+### [TIMESTAMP] - [BRANCH] - [CHANGE_TYPE]
+
+**Objective:** [Main goal of the work session]
+**Context:** [Commit message]
+**Files Modified:** [List of changed files]
+
+**Change Summary:**
+- Files changed: X
+- Lines added: Y
+- Lines deleted: Z
+- Rust modules: [affected .rs files]
+
+**Technical Implementation:**
+[Key technical details to fill]
+
+**Challenges Encountered:**
+[Issues faced and solutions]
+
+**Validation Results:**
+[Test results and validation]
+
+**Cross-References:**
+[Related commits and work]
+
+**Next Steps:**
+[Follow-up work identified]
+
+**Implementation Notes:**
+[Technical details for future reference]
+```
+
+### 🔍 **Quality Gate Integration**
+
+#### Pre-commit Validation
+
+Automatic checks before each commit:
+```bash
+# Code formatting check
+cargo fmt --check
+
+# Linting and best practices
+cargo clippy --all-targets --all-features -- -D warnings
+
+# Compilation verification
+cargo check
+```
+
+#### Commit Message Standards
+
+Conventional commit format is encouraged:
+- `feat:` - New features
+- `fix:` - Bug fixes  
+- `docs:` - Documentation updates
+- `refactor:` - Code refactoring
+- `test:` - Test additions or updates
+- `chore:` - Build system or auxiliary tool changes
+
+### 📊 **Automation Benefits**
+
+1. **Session Continuity**: Complete context preservation between development sessions
+2. **Quality Assurance**: Automated validation prevents common issues
+3. **Documentation**: Living record of development decisions and rationale
+4. **Efficiency**: Reduced manual tracking overhead
+5. **Accountability**: Comprehensive audit trail of all changes
+
+### 🛠️ **Customization and Maintenance**
+
+#### Hook Customization
+
+Edit hooks in `../../.git/hooks/`:
+```bash
+# Make hooks executable after editing
+chmod +x ../../.git/hooks/pre-commit
+chmod +x ../../.git/hooks/post-commit
+```
+
+#### Log Template Updates
+
+Templates can be customized in the post-commit hook to match project needs.
+
+#### Troubleshooting Automation
+
+```bash
+# Check hook permissions
+ls -la ../../.git/hooks/
+
+# Test hooks manually
+bash ../../.git/hooks/pre-commit
+bash ../../.git/hooks/post-commit
+
+# Verify log file permissions
+ls -la docs/DEVELOPMENT_LOG.md
+
+# Check helper script functionality
+../../scripts/dev-log-helper.sh status
+```
+
+See [DEVELOPMENT_LOGGING.md](../../docs/DEVELOPMENT_LOGGING.md) for complete automation documentation.
+
+---
 
 ## 🐛 Troubleshooting
 

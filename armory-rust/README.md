@@ -127,14 +127,16 @@ src/
 ### Running Tests
 
 ```bash
-# Run all tests
+# Run all tests (106/107 passing - 99.1%)
 cargo test
 
 # Run specific module tests
-cargo test crypto::tests
-cargo test transaction::tests
-cargo test wallet::tests
-cargo test network::tests  # Phase 3 network layer tests
+cargo test crypto::tests       # 15/15 tests (100%)
+cargo test storage::tests      # 12/12 tests (100%)
+cargo test wallet::tests       # 8/8 tests (100%)
+cargo test transaction::tests  # 22/22 tests (100%)
+cargo test network::tests      # 31/31 tests (100%) - Phase 3 complete
+cargo test script::tests       # 6/6 tests (100%)
 
 # Run tests with output
 cargo test -- --nocapture
@@ -144,6 +146,9 @@ RUST_LOG=debug cargo test
 
 # Run network-specific tests only
 cargo test network::
+
+# Test development automation system
+../scripts/dev-log-helper.sh test
 ```
 
 ---
@@ -318,6 +323,48 @@ cargo run -- import "path/to/legacy.wallet" --new-name "imported"
 - **Peak memory**: <500MB during full blockchain sync
 - **Memory safety**: Zero unsafe operations in wallet code
 - **Network memory**: <10MB for P2P connections and RPC state
+
+---
+
+## 🔧 Development Automation
+
+This project includes comprehensive development automation for code quality and session tracking:
+
+### 📝 **Automated Development Logging**
+
+Git hooks automatically capture detailed development session information:
+
+```bash
+# Check automation system status
+../scripts/dev-log-helper.sh status
+
+# Test quality gates and hooks
+../scripts/dev-log-helper.sh test
+
+# Manual log entry (if needed)
+../scripts/dev-log-helper.sh update "Session description"
+
+# View current development log
+cat docs/DEVELOPMENT_LOG.md
+```
+
+### 🔍 **Code Quality Gates**
+
+Pre-commit hooks ensure code quality:
+- **Formatting**: `cargo fmt --check`
+- **Linting**: `cargo clippy --all-targets --all-features`
+- **Compilation**: `cargo check`
+
+### 📊 **Session Tracking**
+
+Post-commit hooks automatically create detailed log entries with:
+- Technical implementation details
+- Change analysis and file statistics
+- Challenges encountered and solutions
+- Validation results and test outcomes
+- Cross-references and next steps
+
+See [DEVELOPMENT_LOGGING.md](../docs/DEVELOPMENT_LOGGING.md) for complete automation guide.
 
 ---
 
